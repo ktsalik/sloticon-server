@@ -1,9 +1,17 @@
-const express = require('express')
+const express = require('express');
 
 class Server {
   constructor() {
+    const port = process.env.PORT || 3001;
     const app = express();
-    const port = process.env.PORT || 3000;
+    const http = require('http');
+    const server = http.createServer(app);
+    const SocketIo = require("socket.io");
+    const io = new SocketIo.Server(server, {
+      cors: {
+        origin: "http://localhost:3000",
+      },
+    });
 
     app.use(express.static(__dirname + '/public'));
 
@@ -11,14 +19,22 @@ class Server {
       res.sendFile(__dirname + 'public/index.html');
     });
 
+    io.on('connection', (socket) => {
+      console.log('a user connected');
+    });
+
     this.app = app;
+    this.server = server;
+    this.io = io;
     this.port = port;
   }
 
   start() {
-    this.app.listen(this.port, () => {
+    this.server.listen(this.port, () => {
       console.log(`Example app listening on port ${this.port}`)
     });
+
+    return this.io;
   }
 }
 
