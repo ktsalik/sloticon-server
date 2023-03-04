@@ -52,12 +52,30 @@ function initIo(io) {
                 key: data.key,
                 balance: rows[0].balance,
               });
+
+              db.run(`UPDATE accounts SET last_login = ? WHERE id = ?`, [(new Date()).getTime(), rows[0].id]);
             } else {
               // invalid login key
             }
           }
-        })
+        });
       }
+    });
+
+    socket.on('gamestate', (data) => {
+      db.all(`SELECT * FROM accounts WHERE key = ?`, [data.key], function(err, rows) {
+        if (err) {
+          console.log(err.message);
+        } else {
+          if (rows.length === 1) {
+            socket.emit('gamestate', {
+              balance: rows[0].balance,
+            });
+          } else {
+            // invalid key
+          }
+        }
+      });
     });
   });
 }

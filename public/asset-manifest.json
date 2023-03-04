@@ -1,17 +1,19 @@
 {
   "files": {
-    "main.css": "/static/css/main.35e9f175.css",
-    "main.js": "/static/js/main.ae67cff9.js",
+    "main.css": "/static/css/main.08362f58.css",
+    "main.js": "/static/js/main.062198cf.js",
     "static/js/787.63f79d93.chunk.js": "/static/js/787.63f79d93.chunk.js",
+    "static/media/ArchivoBlack-Regular.ttf": "/static/media/ArchivoBlack-Regular.e35d38651492de9e7226.ttf",
+    "static/media/rock-climber-logo.png": "/static/media/rock-climber-logo.949b4860a196784a5c99.png",
     "static/media/Google Sans.woff2": "/static/media/Google Sans.e2c14dfc08530e88bfa6.woff2",
     "static/media/Google Sans Greek.woff2": "/static/media/Google Sans Greek.c797bd7c9bec02893291.woff2",
     "index.html": "/index.html",
-    "main.35e9f175.css.map": "/static/css/main.35e9f175.css.map",
-    "main.ae67cff9.js.map": "/static/js/main.ae67cff9.js.map",
+    "main.08362f58.css.map": "/static/css/main.08362f58.css.map",
+    "main.062198cf.js.map": "/static/js/main.062198cf.js.map",
     "787.63f79d93.chunk.js.map": "/static/js/787.63f79d93.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.35e9f175.css",
-    "static/js/main.ae67cff9.js"
+    "static/css/main.08362f58.css",
+    "static/js/main.062198cf.js"
   ]
 }
