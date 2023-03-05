@@ -75,10 +75,37 @@ function initIo(io) {
         console.log(err);
       }
     });
+
+    socket.on('bet', async (data) => {
+      try {
+        const account = await getUser(data.key);
+        const betValue = Math.round((data.bet * data.coinValue) * 100) / 100;
+        if (account.balance >= betValue) {
+          const newBalance = Math.round((account.balance - betValue) * 100) / 100;
+          const betResult = generateBetResult(data.gameId);
+
+          db.run(`UPDATE accounts SET balance = ? WHERE id = ?`, [newBalance, account.id], () => {});
+          db.run(`UPDATE gamestates SET reels = ?, bet = ?, coin_value = ? WHERE user_id = ? AND game_id = ?`, [
+            JSON.stringify(betResult.position),
+            data.bet,
+            data.coinValue,
+            account.id,
+            data.gameId,
+          ], () => {});
+
+          socket.emit('bet', {
+            balance: newBalance,
+            reels: betResult.position,
+          });
+        }
+      } catch (err) {
+
+      }
+    });
   });
 }
 
-function generateDefaultReelsPosition(gameId) {
+function generateRandomReelsPosition(gameId) {
   const position = [];
 
   switch (gameId) {
@@ -95,6 +122,19 @@ function generateDefaultReelsPosition(gameId) {
   }
 
   return position;
+}
+
+function generateBetResult(gameId) {
+  const result = {};
+
+  switch (gameId) {
+    case 'rock-climber':
+      const position = generateRandomReelsPosition(gameId);
+      result.position = position;
+      break;
+  }
+
+  return result;
 }
 
 function createNewUser(username, balance, key) {
@@ -164,7 +204,7 @@ function getOrCreateGamestate(userId, gameId) {
         // create new gamestate
         const bet = 10;
         const coinValue = 0.10;
-        const reels = JSON.stringify(generateDefaultReelsPosition(gameId));
+        const reels = JSON.stringify(generateRandomReelsPosition(gameId));
         
         const newGamestate = await new Promise((resolve) => {
           db.run(`INSERT INTO gamestates (user_id, game_id, reels, bet, coin_value) VALUES (?, ?, ?, ?, ?)`, [
