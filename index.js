@@ -84,14 +84,8 @@ function initIo(io) {
           const newBalance = Math.round((account.balance - betValue) * 100) / 100;
           const betResult = generateBetResult(data.gameId);
 
-          db.run(`UPDATE accounts SET balance = ? WHERE id = ?`, [newBalance, account.id], () => {});
-          db.run(`UPDATE gamestates SET reels = ?, bet = ?, coin_value = ? WHERE user_id = ? AND game_id = ?`, [
-            JSON.stringify(betResult.position),
-            data.bet,
-            data.coinValue,
-            account.id,
-            data.gameId,
-          ], () => {});
+          await updateBalance(account.id, newBalance);
+          await updateGamestate(account.id, data.gameId, data.bet, data.coinValue, JSON.stringify(betResult.position));
 
           socket.emit('bet', {
             balance: newBalance,
@@ -99,7 +93,7 @@ function initIo(io) {
           });
         }
       } catch (err) {
-
+        console.log(err);
       }
     });
   });
@@ -177,7 +171,7 @@ function getUser(key) {
           }
         });
       } else {
-        rejectFn('invalid login key');
+        rejectFn('Invalid key. Cannot get user.');
       }
     }
   });
@@ -228,4 +222,48 @@ function getOrCreateGamestate(userId, gameId) {
   });
 
   return getGamestatePromise;
+}
+
+function updateBalance(userId, value) {
+  let resolveFn;
+  let rejectFn;
+  const updateBalancePromise = new Promise((resolve, reject) => {
+    resolveFn = resolve;
+    rejectFn = reject;
+  });
+
+  db.run(`UPDATE accounts SET balance = ? WHERE id = ?`, [value, userId], function(err) {
+    if (err) {
+      rejectFn(err.message);
+    } else {
+      resolveFn();
+    }
+  });
+
+  return updateBalancePromise;
+}
+
+function updateGamestate(userId, gameId, bet, coinValue, reelsPosition) {
+  let resolveFn;
+  let rejectFn;
+  const updateGamestatePromise = new Promise((resolve, reject) => {
+    resolveFn = resolve;
+    rejectFn = reject;
+  });
+
+  db.run(`UPDATE gamestates SET reels = ?, bet = ?, coin_value = ? WHERE user_id = ? AND game_id = ?`, [
+    reelsPosition,
+    bet,
+    coinValue,
+    userId,
+    gameId,
+  ], function(err) {
+    if (err) {
+      rejectFn(err.message);
+    } else {
+      resolveFn();
+    }
+  });
+
+  return updateGamestatePromise;
 }
