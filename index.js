@@ -90,6 +90,8 @@ function initIo(io) {
           socket.emit('bet', {
             balance: newBalance,
             reels: betResult.position,
+            isWin: betResult.lines.length > 0,
+            win: betResult.lines,
           });
         }
       } catch (err) {
@@ -124,6 +126,104 @@ function generateBetResult(gameId) {
   switch (gameId) {
     case 'rock-climber':
       const position = generateRandomReelsPosition(gameId);
+
+      const linesPositions = [
+        [
+          [0, 0, 0, 1],
+          [0, 0, 0, 1],
+          [0, 0, 1, 0],
+          [0, 0, 0, 1],
+          [0, 0, 0, 1],
+        ],
+        [
+          [0, 1, 0, 0],
+          [0, 1, 0, 0],
+          [0, 0, 1, 0],
+          [0, 1, 0, 0],
+          [0, 1, 0, 0],
+        ],
+        [
+          [0, 0, 1, 0],
+          [0, 0, 0, 1],
+          [0, 0, 0, 1],
+          [0, 0, 0, 1],
+          [0, 0, 1, 0],
+        ],
+        [
+          [0, 0, 1, 0],
+          [0, 1, 0, 0],
+          [0, 1, 0, 0],
+          [0, 1, 0, 0],
+          [0, 0, 1, 0],
+        ],
+        [
+          [0, 1, 0, 0],
+          [0, 1, 0, 0],
+          [0, 1, 0, 0],
+          [0, 1, 0, 0],
+          [0, 1, 0, 0],
+        ],
+        [
+          [0, 0, 1, 0],
+          [0, 0, 1, 0],
+          [0, 0, 1, 0],
+          [0, 0, 1, 0],
+          [0, 0, 1, 0],
+        ],
+        [
+          [0, 0, 0, 1],
+          [0, 0, 0, 1],
+          [0, 0, 0, 1],
+          [0, 0, 0, 1],
+          [0, 0, 0, 1],
+        ],
+        [
+          [0, 0, 0, 1],
+          [0, 0, 1, 0],
+          [0, 1, 0, 0],
+          [0, 0, 1, 0],
+          [0, 0, 0, 1],
+        ],
+        [
+          [0, 1, 0, 0],
+          [0, 0, 1, 0],
+          [0, 0, 0, 1],
+          [0, 0, 1, 0],
+          [0, 1, 0, 0],
+        ],
+      ];
+
+      result.lines = [];
+      linesPositions.forEach((linePosition, i) => {
+        let symbolsInLine = [];
+        for (let j = 0; j < linePosition.length; j++) {
+          for (let k = 0; k < linePosition[j].length; k++) {
+            if (linePosition[j][k] === 1) {
+              symbolsInLine.push(position[j][k]);
+            }
+          }
+        }
+
+        let identicalSymbol = symbolsInLine[0];
+        let identicalSymbolsCount = 1;
+        for (let j = 1; j < symbolsInLine.length; j++) {
+          if (identicalSymbol === symbolsInLine[j]) {
+            identicalSymbolsCount++;
+          } else {
+            break;
+          }
+        }
+
+        if (identicalSymbolsCount >= 3) {
+          result.lines.push({
+            number: i + 1,
+            symbol: identicalSymbol,
+            count: identicalSymbolsCount,
+            map: linePosition,
+          });
+        }
+      });
+
       result.position = position;
       break;
   }
