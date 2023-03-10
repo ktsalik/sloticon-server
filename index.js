@@ -79,7 +79,7 @@ function initIo(io) {
     socket.on('bet', async (data) => {
       try {
         const account = await getUser(data.key);
-        const betValue = Math.round((data.bet * data.coinValue) * 100) / 100;
+        const betValue = Math.round((data.bet * 10 * data.coinValue) * 100) / 100;
         if (account.balance >= betValue) {
           const newBalance = Math.round((account.balance - betValue) * 100) / 100;
           const betResult = generateBetResult(data.gameId);
