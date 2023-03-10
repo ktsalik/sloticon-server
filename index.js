@@ -79,10 +79,10 @@ function initIo(io) {
     socket.on('bet', async (data) => {
       try {
         const account = await getUser(data.key);
-        const betValue = Math.round((data.bet * 10 * data.coinValue) * 100) / 100;
-        if (account.balance >= betValue) {
-          const newBalance = Math.round((account.balance - betValue) * 100) / 100;
-          const betResult = generateBetResult(data.gameId);
+        const betAmount = Math.round((data.bet * 10 * data.coinValue) * 100) / 100;
+        if (account.balance >= betAmount) {
+          const newBalance = Math.round((account.balance - betAmount) * 100) / 100;
+          const betResult = generateBetResult(data.gameId, betAmount);
 
           await updateBalance(account.id, newBalance);
           await updateGamestate(account.id, data.gameId, data.bet, data.coinValue, JSON.stringify(betResult.position));
@@ -120,7 +120,7 @@ function generateRandomReelsPosition(gameId) {
   return position;
 }
 
-function generateBetResult(gameId) {
+function generateBetResult(gameId, betAmount) {
   const result = {};
 
   switch (gameId) {
@@ -214,12 +214,128 @@ function generateBetResult(gameId) {
           }
         }
 
+        const symbolsMultipliers = {
+          1: [
+            {
+              count: 3,
+              multiplier: 0.1,
+            },
+            {
+              count: 4,
+              multiplier: 0.5,
+            },
+            {
+              count: 5,
+              multiplier: 2,
+            },
+          ],
+          2: [
+            {
+              count: 3,
+              multiplier: 0.1,
+            },
+            {
+              count: 4,
+              multiplier: 0.5,
+            },
+            {
+              count: 5,
+              multiplier: 2,
+            },
+          ],
+          3: [
+            {
+              count: 3,
+              multiplier: 0.2,
+            },
+            {
+              count: 4,
+              multiplier: 0.5,
+            },
+            {
+              count: 5,
+              multiplier: 2,
+            },
+          ],
+          4: [
+            {
+              count: 3,
+              multiplier: 0.2,
+            },
+            {
+              count: 4,
+              multiplier: 0.5,
+            },
+            {
+              count: 5,
+              multiplier: 2,
+            },
+          ],
+          5: [
+            {
+              count: 3,
+              multiplier: 0.3,
+            },
+            {
+              count: 4,
+              multiplier: 1,
+            },
+            {
+              count: 5,
+              multiplier: 2.5,
+            },
+          ],
+          6: [
+            {
+              count: 3,
+              multiplier: 0.5,
+            },
+            {
+              count: 4,
+              multiplier: 2.5,
+            },
+            {
+              count: 5,
+              multiplier: 5,
+            },
+          ],
+          7: [
+            {
+              count: 3,
+              multiplier: 1,
+            },
+            {
+              count: 4,
+              multiplier: 3,
+            },
+            {
+              count: 5,
+              multiplier: 5.5,
+            },
+          ],
+          8: [
+            {
+              count: 3,
+              multiplier: 1,
+            },
+            {
+              count: 4,
+              multiplier: 3.5,
+            },
+            {
+              count: 5,
+              multiplier: 6,
+            },
+          ],
+        };
+
         if (identicalSymbolsCount >= 3) {
           result.lines.push({
             number: i + 1,
             symbol: identicalSymbol,
             count: identicalSymbolsCount,
             map: linePosition,
+            amount: Math.round(betAmount * symbolsMultipliers[identicalSymbol][identicalSymbolsCount - 3].multiplier * 100) / 100,
           });
         }
       });
