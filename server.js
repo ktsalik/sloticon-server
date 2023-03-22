@@ -15,8 +15,12 @@ class Server {
 
     app.use(express.static(__dirname + '/public'));
 
-    app.all('*', (req, res) => {
-      res.sendFile(__dirname + 'public/index.html');
+    app.get('/', (req, res) => {
+      res.sendFile(__dirname + '/public/index.html');
+    });
+
+    app.use((req, res) => {
+      res.sendFile(__dirname + '/public/index.html');
     });
 
     io.on('connection', (socket) => {
