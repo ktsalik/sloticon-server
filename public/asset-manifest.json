@@ -1,19 +1,20 @@
 {
   "files": {
-    "main.css": "/static/css/main.6c8ffcce.css",
-    "main.js": "/static/js/main.b3a1e821.js",
+    "main.css": "/static/css/main.eb66bc80.css",
+    "main.js": "/static/js/main.efdb52e7.js",
     "static/js/787.63f79d93.chunk.js": "/static/js/787.63f79d93.chunk.js",
     "static/media/ArchivoBlack-Regular.ttf": "/static/media/ArchivoBlack-Regular.e35d38651492de9e7226.ttf",
-    "static/media/rock-climber-logo.png": "/static/media/rock-climber-logo.949b4860a196784a5c99.png",
     "static/media/Google Sans.woff2": "/static/media/Google Sans.e2c14dfc08530e88bfa6.woff2",
+    "static/media/egyptian-treasures-logo.png": "/static/media/egyptian-treasures-logo.cfe1da3580ec1be5fd84.png",
+    "static/media/rock-climber-logo.png": "/static/media/rock-climber-logo.1cc45278842bf9d8c729.png",
     "static/media/Google Sans Greek.woff2": "/static/media/Google Sans Greek.c797bd7c9bec02893291.woff2",
     "index.html": "/index.html",
-    "main.6c8ffcce.css.map": "/static/css/main.6c8ffcce.css.map",
-    "main.b3a1e821.js.map": "/static/js/main.b3a1e821.js.map",
+    "main.eb66bc80.css.map": "/static/css/main.eb66bc80.css.map",
+    "main.efdb52e7.js.map": "/static/js/main.efdb52e7.js.map",
     "787.63f79d93.chunk.js.map": "/static/js/787.63f79d93.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.6c8ffcce.css",
-    "static/js/main.b3a1e821.js"
+    "static/css/main.eb66bc80.css",
+    "static/js/main.efdb52e7.js"
   ]
 }

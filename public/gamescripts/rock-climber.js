@@ -16,13 +16,16 @@ let bet = 1;
 const coinValueValues = [0.01, 0.03, 0.10, 0.20, 0.50];
 let coinValueValueIndex = 0;
 let balance = 0;
-let betResponse = false;
+let betResponse = null;
 
 const symbolsCount = 8;
 const spinTime = 350;
 const spinTimeBetweenReels = 200;
+let autoplay = false;
+let creditsTween;
+let creditsTweenCompleted = true;
 
-let creditsValue, betValue, betValueTool, coinValueTool, totalBetTool, winAmountContainer, winAmountText, infoText;
+let creditsValue, betValue, betValueTool, coinValueTool, totalBetTool, winAmountContainer, winAmountText, infoText, btnAutoplayText;
 let onBtnTotalBetMinus, onBtnTotalBetPlus;
 
 const texts = [];
@@ -44,8 +47,84 @@ const assetsManifest = {
           srcs: `${assetsUrl}main_game/screen.png`,
         },
         {
-          name: 'logo',
-          srcs: `${assetsUrl}main_game/ui/logo_small.png`,
+          name: 'logo_104',
+          srcs: `${assetsUrl}animations/logo/logo_104.png`,
+        },
+        {
+          name: 'logo_105',
+          srcs: `${assetsUrl}animations/logo/logo_105.png`,
+        },
+        {
+          name: 'logo_106',
+          srcs: `${assetsUrl}animations/logo/logo_106.png`,
+        },
+        {
+          name: 'logo_107',
+          srcs: `${assetsUrl}animations/logo/logo_107.png`,
+        },
+        {
+          name: 'logo_108',
+          srcs: `${assetsUrl}animations/logo/logo_108.png`,
+        },
+        {
+          name: 'logo_109',
+          srcs: `${assetsUrl}animations/logo/logo_109.png`,
+        },
+        {
+          name: 'logo_110',
+          srcs: `${assetsUrl}animations/logo/logo_110.png`,
+        },
+        {
+          name: 'logo_111',
+          srcs: `${assetsUrl}animations/logo/logo_111.png`,
+        },
+        {
+          name: 'logo_112',
+          srcs: `${assetsUrl}animations/logo/logo_112.png`,
+        },
+        {
+          name: 'logo_113',
+          srcs: `${assetsUrl}animations/logo/logo_113.png`,
+        },
+        {
+          name: 'logo_114',
+          srcs: `${assetsUrl}animations/logo/logo_114.png`,
+        },
+        {
+          name: 'logo_115',
+          srcs: `${assetsUrl}animations/logo/logo_115.png`,
+        },
+        {
+          name: 'logo_116',
+          srcs: `${assetsUrl}animations/logo/logo_116.png`,
+        },
+        {
+          name: 'logo_117',
+          srcs: `${assetsUrl}animations/logo/logo_117.png`,
+        },
+        {
+          name: 'logo_118',
+          srcs: `${assetsUrl}animations/logo/logo_118.png`,
+        },
+        {
+          name: 'logo_119',
+          srcs: `${assetsUrl}animations/logo/logo_119.png`,
+        },
+        {
+          name: 'logo_120',
+          srcs: `${assetsUrl}animations/logo/logo_120.png`,
+        },
+        {
+          name: 'logo_121',
+          srcs: `${assetsUrl}animations/logo/logo_121.png`,
+        },
+        {
+          name: 'logo_122',
+          srcs: `${assetsUrl}animations/logo/logo_122.png`,
+        },
+        {
+          name: 'logo_123',
+          srcs: `${assetsUrl}animations/logo/logo_123.png`,
         },
         {
           name: 'spin-icon',
@@ -500,6 +579,11 @@ Promise.all([uiAssetsLoadPromise, symbolsAssetsLoadPromise]).then(() => {
   init();
 });
 
+const logoAnimationFramesIds = [];
+for (let i = 104; i <= 123; i++) {
+  logoAnimationFramesIds.push('logo_' + i);
+}
+
 const symbolWinEffectFramesIds = [];
 for (let i = 87; i <= 136; i++) {
   symbolWinEffectFramesIds.push('symbol-win-effect-' + i);
@@ -532,6 +616,7 @@ let stopCommandGiven = false;
 function play() {
   if (reels.active) {
     stopCommandGiven = true;
+    autoplay = false;
 
     if (betResponse) {
       reels.onStopCommandFns.forEach((fn) => fn());
@@ -604,11 +689,18 @@ function init() {
   reelsBackground.z = 1;
   stage.addChild(reelsBackground);
 
-  const logo = PIXI.Sprite.from('logo');
+  const logo = PIXI.AnimatedSprite.fromFrames(logoAnimationFramesIds);
   logo.anchor.set(0.5, 0);
-  logo.scale.set(0.7, 0.7);
   logo.x = 1280 / 2;
   logo.z = 6;
+  logo.loop = false;
+  logo.animationSpeed = 0.3;
+  logo.play();
+  logo.onComplete = () => {
+    setTimeout(() => {
+      logo.gotoAndPlay(0);
+    }, 5000);
+  };
   stage.addChild(logo);
 
   const characterAnimation = PIXI.AnimatedSprite.fromFrames(characterIdleAnimationFramesIds);
@@ -803,6 +895,20 @@ function init() {
     }
   });
 
+  PIXI.Ticker.shared.add(() => {
+    if (autoplay) {
+      if (!reels.active) {
+        if (betResponse === null || (!betResponse.isWin) || creditsTweenCompleted) {
+          play();
+        }
+      }
+
+      btnAutoplayText.tint = 0xB1071D;
+    } else {
+      btnAutoplayText.tint = 0xFFFFFF;
+    }
+  });
+
   socket.on('gamestate', (state) => {
     balance = state.balance;
     creditsValue.text = balance.toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits: 2 });
@@ -831,7 +937,6 @@ function init() {
 
   socket.on('bet', (data) => {
     balance = data.balance;
-    creditsValue.text = balance.toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits: 2 });
     
     data.reels.forEach((reelValues, i) => {
       reels[i].stopValues = reelValues.slice();
@@ -842,21 +947,41 @@ function init() {
       data.win.forEach((line) => totalWin += line.amount);
       winAmountText.text = '€' + totalWin.toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits: 2 });
 
+      balance -= totalWin;
+
       const o = { balance };
+      creditsTweenCompleted = false;
       reels.onceStop(() => {
-        gsap.to(o, { balance: data.balance + totalWin, duration: 2, onUpdate: () => {
-          creditsValue.text = o.balance.toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits: 2 });
-        }});
+        creditsTween = gsap.to(o, {
+          balance: balance + totalWin,
+          duration: 2,
+          onUpdate: () => {
+            creditsValue.text = o.balance.toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits: 2 });
+          },
+          onComplete: () => {
+            balance = data.balance;
+            creditsTweenCompleted = true;
+          },
+        });
 
         infoText.visible = false;
         winAmountContainer.visible = true;
         winAmountContainer.x = (1280 / 2) - (winAmountContainer.width / 2);
         reels.onceStart(() => {
+          setTimeout(() => {
+            if (creditsTween && creditsTween.isActive()) {
+              creditsTween.progress(1);
+              creditsTween.kill();
+            }
+          });
+
           infoText.visible = true;
           winAmountContainer.visible = false;
         });
       });
     }
+
+    creditsValue.text = balance.toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits: 2 });
 
     betResponse = data;
 
@@ -1000,7 +1125,7 @@ function initControls() {
   controls.addChild(btnPlay);
 
   PIXI.Ticker.shared.add(() => {
-    if (reels.active) {
+    if (reels.active || autoplay) {
       btnPlay.texture = PIXI.Texture.from('stop-icon');
     } else {
       btnPlay.texture = PIXI.Texture.from('spin-icon');
@@ -1073,12 +1198,14 @@ function initControls() {
   const btnAutoplay = new PIXI.Container();
   btnAutoplay.x = btnPlay.x;
   btnAutoplay.y = 65;
+  btnAutoplay.interactive = true;
+  btnAutoplay.on('pointerdown', () => { autoplay = !autoplay; });
   controls.addChild(btnAutoplay);
 
   const btnAutoplayBackground = new PIXI.Graphics();
   btnAutoplay.addChild(btnAutoplayBackground);
 
-  const btnAutoplayText = new PIXI.Text('AUTOPLAY', new PIXI.TextStyle({
+  btnAutoplayText = new PIXI.Text('AUTOPLAY', new PIXI.TextStyle({
     fontFamily: 'Archivo Black',
     fontSize: 12,
     fill: '#FFFFFF',
@@ -1235,14 +1362,26 @@ function initBetWindow() {
   container.addChild(totalBetTool.container);
   totalBetTool.valueText.text = '€' + (bet * 10 * coinValueValues[coinValueValueIndex]).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   onBtnTotalBetMinus = function() {
-    if (bet === 1) {
-      if (coinValueValueIndex > 0) {
-        coinValueValueIndex--;
-        bet = 10;
+    let betDecreased = false;
+
+    let b = bet, cvvi = coinValueValueIndex, tb;
+    while (!betDecreased && (b > 1 || cvvi > 0)) {
+      if (b === 1) {
+        if (cvvi > 0) {
+          cvvi--;
+          b = 10;
+        }
+      } else {
+        b--;
       }
-    } else {
-      bet--;
+
+      tb = b * 10 * coinValueValues[cvvi];
+      const currentBet = bet * 10 * coinValueValues[coinValueValueIndex];
+      betDecreased = tb < currentBet;
     }
+
+    bet = b;
+    coinValueValueIndex = cvvi;
 
     betValueTool.valueText.text = bet;
     coinValueTool.valueText.text = '€' + coinValueValues[coinValueValueIndex].toFixed(2);
@@ -1252,14 +1391,26 @@ function initBetWindow() {
   totalBetTool.btnMinus.on('pointerdown', onBtnTotalBetMinus);
 
   onBtnTotalBetPlus = function() {
-    if (bet === 10) {
-      if (coinValueValueIndex < coinValueValues.length - 1) {
-        coinValueValueIndex++;
-        bet = 1;
+    let betIncreased = false;
+
+    let b = bet, cvvi = coinValueValueIndex, tb;
+    while (!betIncreased && (b < 10 || cvvi < coinValueValues.length - 1)) {
+      if (b === 10) {
+        if (cvvi < coinValueValues.length - 1) {
+          cvvi++;
+          b = 1;
+        }
+      } else {
+        b++;
       }
-    } else {
-      bet++;
+
+      tb = b * 10 * coinValueValues[cvvi];
+      const currentBet = bet * 10 * coinValueValues[coinValueValueIndex];
+      betIncreased = tb > currentBet;
     }
+
+    bet = b;
+    coinValueValueIndex = cvvi;
 
     betValueTool.valueText.text = bet;
     coinValueTool.valueText.text = '€' + coinValueValues[coinValueValueIndex].toFixed(2);
@@ -1346,4 +1497,7 @@ window.renderer = renderer;
 window.stage = stage;
 window.reels = reels;
 
-return renderer.view;
+return {
+  view: renderer.view,
+  ticker: PIXI.Ticker.shared,
+};
