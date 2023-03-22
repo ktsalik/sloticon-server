@@ -15,7 +15,7 @@ class Server {
 
     app.use(express.static(__dirname + '/public'));
 
-    app.get('/', (req, res) => {
+    app.all('*', (req, res) => {
       res.sendFile(__dirname + 'public/index.html');
     });
 
