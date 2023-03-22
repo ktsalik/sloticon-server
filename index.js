@@ -5,6 +5,8 @@ const {
   v4: uuidv4,
 } = require('uuid');
 const Server = require('./server');
+const rockClimberData = require('./games-data/rock-climber');
+const egyptianTreasuresData = require('./games-data/egyptian-treasures');
 
 let db = new sqlite3.Database('./database.db', (err) => {
   if (err) {
@@ -60,6 +62,16 @@ function initIo(io) {
       }
     });
 
+    socket.on('balance', async (data) => {
+      try {
+        const account = await getUser(data.key);
+
+        socket.emit('balance', account.balance);
+      } catch (err) {
+        console.log(err);
+      }
+    });
+
     socket.on('gamestate', async (data) => {
       try {
         const account = await getUser(data.key);
@@ -81,8 +93,14 @@ function initIo(io) {
         const account = await getUser(data.key);
         const betAmount = Math.round((data.bet * 10 * data.coinValue) * 100) / 100;
         if (account.balance >= betAmount) {
-          const newBalance = Math.round((account.balance - betAmount) * 100) / 100;
           const betResult = generateBetResult(data.gameId, betAmount);
+          
+          let winAmount = 0;
+          betResult.lines.forEach((line) => {
+            winAmount += line.amount;
+          });
+
+          const newBalance = (Math.round((account.balance - betAmount + winAmount) * 100) / 100);
 
           await updateBalance(account.id, newBalance);
           await updateGamestate(account.id, data.gameId, data.bet, data.coinValue, JSON.stringify(betResult.position));
@@ -103,18 +121,25 @@ function initIo(io) {
 
 function generateRandomReelsPosition(gameId) {
   const position = [];
+  let reelsCount, reelPositions, symbolsCount;
 
   switch (gameId) {
     case 'rock-climber':
-      const reelsCount = 5;
-      const reelPositions = 3;
-      const symbolsCount = 8;
-      for (let i = 0; i < reelsCount; i++) {
-        position.push(Array.from(Array(reelPositions + 1)).map(() => {
-          return parseInt(Math.random() * symbolsCount) + 1;
-        }));
-      }
+      reelsCount = rockClimberData.reelsCount;
+      reelPositions = rockClimberData.reelPositions;
+      symbolsCount = rockClimberData.symbolsCount;
       break;
+    case 'egyptian-treasures':
+      reelsCount = egyptianTreasuresData.reelsCount;
+      reelPositions = egyptianTreasuresData.reelPositions;
+      symbolsCount = egyptianTreasuresData.symbolsCount;
+      break;
+  }
+
+  for (let i = 0; i < reelsCount; i++) {
+    position.push(Array.from(Array(reelPositions + 1)).map(() => {
+      return parseInt(Math.random() * symbolsCount) + 1;
+    }));
   }
 
   return position;
@@ -122,227 +147,70 @@ function generateRandomReelsPosition(gameId) {
 
 function generateBetResult(gameId, betAmount) {
   const result = {};
+  let position, lines;
 
   switch (gameId) {
     case 'rock-climber':
-      const position = generateRandomReelsPosition(gameId);
-
-      const linesPositions = [
-        [
-          [0, 0, 0, 1],
-          [0, 0, 0, 1],
-          [0, 0, 1, 0],
-          [0, 0, 0, 1],
-          [0, 0, 0, 1],
-        ],
-        [
-          [0, 1, 0, 0],
-          [0, 1, 0, 0],
-          [0, 0, 1, 0],
-          [0, 1, 0, 0],
-          [0, 1, 0, 0],
-        ],
-        [
-          [0, 0, 1, 0],
-          [0, 0, 0, 1],
-          [0, 0, 0, 1],
-          [0, 0, 0, 1],
-          [0, 0, 1, 0],
-        ],
-        [
-          [0, 0, 1, 0],
-          [0, 1, 0, 0],
-          [0, 1, 0, 0],
-          [0, 1, 0, 0],
-          [0, 0, 1, 0],
-        ],
-        [
-          [0, 1, 0, 0],
-          [0, 1, 0, 0],
-          [0, 1, 0, 0],
-          [0, 1, 0, 0],
-          [0, 1, 0, 0],
-        ],
-        [
-          [0, 0, 1, 0],
-          [0, 0, 1, 0],
-          [0, 0, 1, 0],
-          [0, 0, 1, 0],
-          [0, 0, 1, 0],
-        ],
-        [
-          [0, 0, 0, 1],
-          [0, 0, 0, 1],
-          [0, 0, 0, 1],
-          [0, 0, 0, 1],
-          [0, 0, 0, 1],
-        ],
-        [
-          [0, 0, 0, 1],
-          [0, 0, 1, 0],
-          [0, 1, 0, 0],
-          [0, 0, 1, 0],
-          [0, 0, 0, 1],
-        ],
-        [
-          [0, 1, 0, 0],
-          [0, 0, 1, 0],
-          [0, 0, 0, 1],
-          [0, 0, 1, 0],
-          [0, 1, 0, 0],
-        ],
-      ];
-
-      result.lines = [];
-      linesPositions.forEach((linePosition, i) => {
-        let symbolsInLine = [];
-        for (let j = 0; j < linePosition.length; j++) {
-          for (let k = 0; k < linePosition[j].length; k++) {
-            if (linePosition[j][k] === 1) {
-              symbolsInLine.push(position[j][k]);
-            }
-          }
-        }
-
-        let identicalSymbol = symbolsInLine[0];
-        let identicalSymbolsCount = 1;
-        for (let j = 1; j < symbolsInLine.length; j++) {
-          if (identicalSymbol === symbolsInLine[j]) {
-            identicalSymbolsCount++;
-          } else {
-            break;
-          }
-        }
-
-        const symbolsMultipliers = {
-          1: [
-            {
-              count: 3,
-              multiplier: 0.1,
-            },
-            {
-              count: 4,
-              multiplier: 0.5,
-            },
-            {
-              count: 5,
-              multiplier: 2,
-            },
-          ],
-          2: [
-            {
-              count: 3,
-              multiplier: 0.1,
-            },
-            {
-              count: 4,
-              multiplier: 0.5,
-            },
-            {
-              count: 5,
-              multiplier: 2,
-            },
-          ],
-          3: [
-            {
-              count: 3,
-              multiplier: 0.2,
-            },
-            {
-              count: 4,
-              multiplier: 0.5,
-            },
-            {
-              count: 5,
-              multiplier: 2,
-            },
-          ],
-          4: [
-            {
-              count: 3,
-              multiplier: 0.2,
-            },
-            {
-              count: 4,
-              multiplier: 0.5,
-            },
-            {
-              count: 5,
-              multiplier: 2,
-            },
-          ],
-          5: [
-            {
-              count: 3,
-              multiplier: 0.3,
-            },
-            {
-              count: 4,
-              multiplier: 1,
-            },
-            {
-              count: 5,
-              multiplier: 2.5,
-            },
-          ],
-          6: [
-            {
-              count: 3,
-              multiplier: 0.5,
-            },
-            {
-              count: 4,
-              multiplier: 2.5,
-            },
-            {
-              count: 5,
-              multiplier: 5,
-            },
-          ],
-          7: [
-            {
-              count: 3,
-              multiplier: 1,
-            },
-            {
-              count: 4,
-              multiplier: 3,
-            },
-            {
-              count: 5,
-              multiplier: 5.5,
-            },
-          ],
-          8: [
-            {
-              count: 3,
-              multiplier: 1,
-            },
-            {
-              count: 4,
-              multiplier: 3.5,
-            },
-            {
-              count: 5,
-              multiplier: 6,
-            },
-          ],
-        };
-
-        if (identicalSymbolsCount >= 3) {
-          result.lines.push({
-            number: i + 1,
-            symbol: identicalSymbol,
-            count: identicalSymbolsCount,
-            map: linePosition,
-            amount: Math.round(betAmount * symbolsMultipliers[identicalSymbol][identicalSymbolsCount - 3].multiplier * 100) / 100,
-          });
-        }
-      });
-
-      result.position = position;
+      position = generateRandomReelsPosition(gameId);
+      break;
+    case 'egyptian-treasures':
+      position = generateRandomReelsPosition(gameId);
       break;
   }
+
+  lines = processReelsPosition(gameId, betAmount, position);
+
+  return {
+    position,
+    lines,
+  };
+}
+
+function processReelsPosition(gameId, betAmount, position) {
+  const result = [];
+  let linesPositions, symbolsMultipliers;
+
+  switch (gameId) {
+    case 'rock-climber':
+      linesPositions = rockClimberData.linesPositions;
+      symbolsMultipliers = rockClimberData.symbolsMultipliers;
+      break;
+    case 'egyptian-treasures':
+      linesPositions = egyptianTreasuresData.linesPositions;
+      symbolsMultipliers = egyptianTreasuresData.symbolsMultipliers;
+      break;
+  }
+
+  linesPositions.forEach((linePosition, i) => {
+    let symbolsInLine = [];
+    for (let j = 0; j < linePosition.length; j++) {
+      for (let k = 0; k < linePosition[j].length; k++) {
+        if (linePosition[j][k] === 1) {
+          symbolsInLine.push(position[j][k]);
+        }
+      }
+    }
+
+    let identicalSymbol = symbolsInLine[0];
+    let identicalSymbolsCount = 1;
+    for (let j = 1; j < symbolsInLine.length; j++) {
+      if (identicalSymbol === symbolsInLine[j]) {
+        identicalSymbolsCount++;
+      } else {
+        break;
+      }
+    }
+
+    if (identicalSymbolsCount >= 3) {
+      result.push({
+        number: i + 1,
+        symbol: identicalSymbol,
+        count: identicalSymbolsCount,
+        map: linePosition,
+        amount: Math.round(betAmount * symbolsMultipliers[identicalSymbol][identicalSymbolsCount - 3].multiplier * 100) / 100,
+      });
+    }
+  });
 
   return result;
 }
