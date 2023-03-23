@@ -175,7 +175,7 @@ for (let i = 0; i < symbolsCount; i++) {
 
 game.onInit(() => {
   const background = game.addSprite('background');
-
+  background.z = 2;
   const reels = game.reelsController.reels;
 
   reels.forEach((reel, i) => {
@@ -216,10 +216,10 @@ game.onInit(() => {
                   const symbol = game.reelsController.reels[i].symbols[j];
                   const symbolValue = game.reelsController.reels[i].values[j];
 
-                  const symbolBackground = PIXI.Sprite.from('symbol-frame-back');
-                  symbolBackground.anchor.set(0.5, 0.5);
-                  symbol.addChild(symbolBackground);
-                  linesHighlightComponents.push(symbolBackground);
+                  // const symbolBackground = PIXI.Sprite.from('symbol-frame-back');
+                  // symbolBackground.anchor.set(0.5, 0.5);
+                  // symbol.addChild(symbolBackground);
+                  // linesHighlightComponents.push(symbolBackground);
 
                   const animation = PIXI.AnimatedSprite.fromFrames(symbolsAnimationFramesIds[symbolValue - 1]);
                   animation.anchor.set(0.5, 0.5);
@@ -231,7 +231,7 @@ game.onInit(() => {
                     setTimeout(() => {
                       if (!animation.destroyed) {
                         animation.destroy();
-                        symbolBackground.destroy();
+                        // symbolBackground.destroy();
                         symbolFrame.destroy();
                       }
                     });
@@ -241,7 +241,7 @@ game.onInit(() => {
                     setTimeout(() => {
                       if (!animation.destroyed) {
                         animation.destroy();
-                        symbolBackground.destroy();
+                        // symbolBackground.destroy();
                         symbolFrame.destroy();
                       }
                     });
@@ -311,11 +311,29 @@ for (let i = 0; i <= 23; i++) {
   });
 }
 
+const ticker = new PIXI.Ticker();
+const container = new PIXI.Container();
+game.resize();
+container.scale.x = game.renderer.view.width / game.width;
+container.scale.y = game.renderer.view.height / game.height;
+
+ticker.add(() => {
+  game.renderer.render(container);
+});
+ticker.start();
+
+const pleaseWaitText = new PIXI.Text('Please Wait', {
+  fontSize: 30,
+  fill: '#FFFFFF',
+});
+pleaseWaitText.anchor.set(0.5, 0.5);
+pleaseWaitText.x = 1280 / 2;
+pleaseWaitText.y = 900 / 2;
+container.addChild(pleaseWaitText);
+
 PIXI.Assets.addBundle(gameId + '-loading-bundle', loadingAssetsBundle);
 PIXI.Assets.loadBundle(gameId + '-loading-bundle').then(() => {
-  const ticker = new PIXI.Ticker();
-  const container = new PIXI.Container();
-
+  pleaseWaitText.destroy();
   const background = PIXI.Sprite.from('loading-background');
   container.addChild(background);
 
@@ -323,14 +341,6 @@ PIXI.Assets.loadBundle(gameId + '-loading-bundle').then(() => {
   loadingBar.x = (1280 - loadingBar.width) / 2;
   loadingBar.y = 700;
   container.addChild(loadingBar);
-  
-  ticker.add(() => {
-    game.renderer.render(container);
-  });
-  game.resize();
-  container.scale.x = game.renderer.view.width / game.width;
-  container.scale.y = game.renderer.view.height / game.height;
-  ticker.start();
 
   game.onLoading((progress) => {
     loadingBar.texture = PIXI.Texture.from('loading-bar-' + (Math.round(progress * 23)));
